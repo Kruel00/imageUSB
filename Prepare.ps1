@@ -13,7 +13,7 @@ function Test-Admin {
     exit } 
 $ver = '1.0'
 
-$listaUsuarios = Get-disk
+$ListDisk = Get-disk | Sort-Object -Property Number
 
 Add-Type -AssemblyName System.Windows.Forms
 $Form = New-Object system.Windows.Forms.Form
@@ -43,7 +43,7 @@ $boton2.Width = 100
 $form.Controls.add($boton2)
 
 $ComboBox1 = New-Object System.Windows.Forms.ComboBox
-$ComboBox1.Items.AddRange($listaUsuarios.FriendlyName)
+$ComboBox1.Items.AddRange($ListDisk.FriendlyName)
 $ComboBox1.Location = New-Object Drawing.Point 15,30
 $combobox1.Width = 300
 $Combobox1.SelectedIndex = 1
@@ -54,13 +54,10 @@ $form.Close()
 })
 
 $boton1.add_Click({
-$user = $ComboBox1.SelectedItem.ToString()
-#copiar archivo de backup
-$valuDir = $env:HOMEDRIVE + "\valutech"
 
-if (test-path $valuDir){
-
+    $Label.Text = $Combobox1.SelectedIndex.ToString()
 })
+
 $Form.ShowDialog()
 
 
