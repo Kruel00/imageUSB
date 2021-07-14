@@ -1,9 +1,9 @@
-﻿param([switch]$Elevated)
-
+param([switch]$Elevated)
 
 function Test-Admin { 
     $currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent()) 
-    $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)          } 
+    $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)          }
+
     if ((Test-Admin) -eq $false) {
          if ($elevated) 
             { } 
@@ -12,8 +12,33 @@ function Test-Admin {
               } 
     exit } 
 $ver = '1.0'
+class Memorias
+{
+    $DiskNumber
+    $index
+    $FriendlyName
+    $capacidad
+}
 
-$ListDisk = Get-disk | Sort-Object -Property Number
+$DiskIndex = 0 
+$Discos = get-disk
+$Memorias = New-Object System.Collections.ArrayList
+
+
+foreach($disco in $Discos)
+{
+    if($disco.BusType -eq "USB")
+    {
+        $capacidadS = [Math]::Round($disco.Size * .00000000099) + 1
+        $Memoria = New-Object -TypeName Memorias
+        $Memoria.Index = $DiskIndex
+        $Memoria.DiskNumber = $Disco.DiskNumber
+        $Memoria.capacidad = $capacidadS.ToString() + "GB"
+        $Memoria.FriendlyName = $disco.FriendlyName + " -- " + $Memoria.capacidad
+        $Memorias.add($Memoria)
+        $DiskIndex ++
+    }
+}
 
 Add-Type -AssemblyName System.Windows.Forms
 $Form = New-Object system.Windows.Forms.Form
@@ -43,10 +68,10 @@ $boton2.Width = 100
 $form.Controls.add($boton2)
 
 $ComboBox1 = New-Object System.Windows.Forms.ComboBox
-$ComboBox1.Items.AddRange($ListDisk.FriendlyName)
+$ComboBox1.Items.AddRange($Memorias.FriendlyName)
 $ComboBox1.Location = New-Object Drawing.Point 15,30
 $combobox1.Width = 300
-$Combobox1.SelectedIndex = 1
+$Combobox1.SelectedIndex = 0
 $form.Controls.add($Combobox1)
 
 $boton2.Add_Click({
@@ -54,10 +79,16 @@ $form.Close()
 })
 
 $boton1.add_Click({
+    $SelectedDisk =  $Memorias[$combobox1.SelectedIndex].Disknumber
+    Get-Disk $SelectedDisk | Clear-Disk -removedata -Confirm:$false
+    New-Partition -DiskNumber $SelectedDisk -Size 1000MB -AssignDriveLetter | Format-Volume -FileSystem FAT32 -NewFileSystemLabel WinPE
+    #Get-Partition -DiskNumber $SelectedDisk -PartitionNumber 1 | Set-Partition -NewDriveLetter
+    New-Partition -DiskNumber $SelectedDisk -UseMaximumSize -AssignDriveLetter | Format-Volume -FileSystem FAT32 -NewFileSystemLabel Archivos
+    #Get-Partition -DiskNumber $SelectedDisk -PartitionNumber 2 | Set-Partition -NewDriveLetter
 
-    $Label.Text = $Combobox1.SelectedIndex.ToString()
+    $WinPE = Get-WMIObject Win32_Volume | where{ $_.Label -eq 'WinPE'}
+    write-host "instalando en.." $WinPE.DriveLetter
 })
 
 $Form.ShowDialog()
-
 
