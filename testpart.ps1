@@ -39,3 +39,5 @@ $Drive | Format-Table *
 
 $Drive = Get-CimInstance -ClassName Win32_Volume -Filter "DriveLetter = 'X:'"
 $Drive | Set-CimInstance -Property @{DriveLetter = 'M:'; Label = 'GD Master'}
+
+Start-Process -Wait -FilePath 'C:\"Program Files (x86)"\"Windows Kits"\10\"Assessment and Deployment Kit"\"Deployment Tools"\DandISetEnv.bat' -ArgumentList /q -PassThru

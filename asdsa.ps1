@@ -1,4 +1,4 @@
-param([switch]$Elevated)
+﻿param([switch]$Elevated)
 
 function Test-Admin { 
     $currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent()) 
@@ -14,9 +14,6 @@ function Test-Admin {
     exit } 
 $ver = '1.0'
 
-$_WorkingDirectory = "C:\Valutech\USBPrepare\"
-$_FilesPackage = '\\b1fs\Shared\ITSupport\Disk Cloning\USBCreate\USBCreate.zip'
-
 function GetPEFiles
     { 
         Start-BitsTransfer -Source $($_FilesPackage) -Destination $_WorkingDirectory\Files.zip -TransferType Download -Description "Transfiriendo Archivos"
@@ -24,16 +21,32 @@ function GetPEFiles
         Remove-Item $_WorkingDirectory\Files.zip
     }
 
+$_WorkingDirectory = "C:\Valutech\USBPrepare\"
+$_FilesPackage = "\\b1fs\Shared\ITSupport\Disk Cloning\USBCreate\PEFiles.zip"
 
-if(Test-Path $_WorkingDirectory\PEFiles\"Deployment Tools"\DandISetEnv.bat) 
+if(Test-Path "C:\valutech\USBPrepare\")
+{
+    $_CheckFiles = Get-ChildItem $_WorkingDirectory -Recurse
+
+    if (!$_CheckFiles.Count -ge 1559)
     {
-        Write-Host "Archivos Correctos"
-    }
-    else
-    {
+        Remove-Item $_WorkingDirectory -Recurse -Confirm:$false
         GetPEFiles
     }
+}
+else
+{
+    New-Item $_WorkingDirectory -itemtype directory
+    GetPEFiles
+}
 
+$_WorkingDirectory = "C:\Valutech\USBPrepare"
+if(Test-Path $_WorkingDirectory) {
+        Write-host "Si Existe"
+    }
+   else {
+        Write-host "No Existe"
+    }
 
 class UsbDisks
 {
@@ -101,29 +114,23 @@ $boton2.Add_Click({
 $form.Close()
 })
 
-Function PartUsb
-{
+$boton1.add_Click({
+    Get-Disk
     $SelectedDisk =  $UsbDisks[$combobox1.SelectedIndex].Disknumber
+    
     Write-host "Disco seleccionado: " $SelectedDisk
     Get-Disk $SelectedDisk | Clear-Disk -removedata -Confirm:$false
     New-Partition -DiskNumber $SelectedDisk -Size 1000MB -AssignDriveLetter | Format-Volume -FileSystem FAT32 -NewFileSystemLabel WinPE
     New-Partition -DiskNumber $SelectedDisk -UseMaximumSize -AssignDriveLetter | Format-Volume -FileSystem FAT32 -NewFileSystemLabel Archivos
     
-}
-
-
-
-$boton1.add_Click({
-    PartUsb
-    $_UnatendedFiles = "C:\Valutech\USBPrepare\UnatendedInstaller\*"
-    $_PartToFiles = Get-WMIObject Win32_Volume | where{ $_.Label -eq 'Archivos'}
-    Copy-Item -Path $_UnatendedFiles  -Recurse -Destination $_PartToFiles.DriveLetter
-
     $WinPE = Get-WMIObject Win32_Volume | where{ $_.Label -eq 'WinPE'}
-    $Argumentos = '/k ' + $_WorkingDirectory +'PEFiles\"Deployment Tools"\DandISetEnv.bat' + " " + $WinPE.DriveLetter
-    Write-host "cmd " $Argumentos
+    $Argumentos = '/k ' + $($_WorkingDirectory +"Deployment Tools\DandISetEnv.bat") + " " + $WinPE.DriveLetter
     Start-Process -Wait -FilePath cmd -ArgumentList $Argumentos -PassThru
-    
 })
 
 $Form.ShowDialog()
+
+
+
+
+
